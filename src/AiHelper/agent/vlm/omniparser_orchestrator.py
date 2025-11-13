@@ -1,5 +1,6 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from robot.api import logger
+from PIL import Image
 
 from src.AiHelper.agent.vlm.omniparser_client import OmniParserClient
 from src.AiHelper.agent.vlm.omniparser_parser import OmniParserResultProcessor
@@ -123,7 +124,7 @@ class OmniParserOrchestrator:
         if not elements_data:
             logger.error(f"❌ Aucun élément de type '{element_type}' trouvé")
             return None
-        
+         
         logger.info(f"✓ {len(elements_data)} éléments filtrés")
         
         # Étape 3: Sélection de l'élément via LLM
@@ -148,14 +149,93 @@ class OmniParserOrchestrator:
         
         return result
 
+    @staticmethod
+    def bbox_to_pixels(
+        bbox_normalized: List[float],
+        image_width: int,
+        image_height: int,
+    ) -> Tuple[int, int, int, int]:
+        """
+        Convertit les coordonnées bbox normalisées en coordonnées pixels réelles.
+        
+        Args:
+            bbox_normalized: Liste [x1, y1, x2, y2] avec valeurs entre 0 et 1
+            image_width: Largeur de l'image en pixels
+            image_height: Hauteur de l'image en pixels
+            
+        Returns:
+            Tuple (x1, y1, x2, y2) en coordonnées pixels entières
+            
+        Example:
+            >>> bbox = [0.419, 0.170, 0.574, 0.266]
+            >>> pixels = OmniParserOrchestrator.bbox_to_pixels(bbox, 1080, 1920)
+            >>> print(pixels)  # (452, 326, 620, 510)
+        """
+        if len(bbox_normalized) != 4:
+            raise ValueError(f"bbox doit contenir 4 valeurs, reçu {len(bbox_normalized)}")
+        
+        x1_norm, y1_norm, x2_norm, y2_norm = bbox_normalized
+        
+        # Convertir en pixels
+        x1 = int(x1_norm * image_width)
+        y1 = int(y1_norm * image_height)
+        x2 = int(x2_norm * image_width)
+        y2 = int(y2_norm * image_height)
+        
+        logger.debug(
+            f"Conversion bbox: [{x1_norm:.3f}, {y1_norm:.3f}, {x2_norm:.3f}, {y2_norm:.3f}] "
+            f"-> [{x1}, {y1}, {x2}, {y2}] (image: {image_width}x{image_height})"
+        )
+        
+        return (x1, y1, x2, y2)
+
+    @staticmethod
+    def bbox_to_pixels_from_image(
+        bbox_normalized: List[float],
+        image_path: str,
+    ) -> Tuple[int, int, int, int]:
+        """
+        Convertit les bbox normalisées en pixels en lisant automatiquement les dimensions.
+        
+        Args:
+            bbox_normalized: Liste [x1, y1, x2, y2] avec valeurs entre 0 et 1
+            image_path: Chemin vers l'image pour obtenir les dimensions
+            
+        Returns:
+            Tuple (x1, y1, x2, y2) en coordonnées pixels entières
+            
+        Example:
+            >>> bbox = [0.419, 0.170, 0.574, 0.266]
+            >>> pixels = OmniParserOrchestrator.bbox_to_pixels_from_image(
+            ...     bbox, "screenshot.png"
+            ... )
+            >>> print(pixels)  # (452, 326, 620, 510)
+        """
+        try:
+            with Image.open(image_path) as img:
+                width, height = img.size
+            logger.debug(f"Dimensions de l'image '{image_path}': {width}x{height}")
+        except Exception as e:
+            logger.error(f"Impossible d'ouvrir l'image '{image_path}': {e}")
+            raise
+        
+        return OmniParserOrchestrator.bbox_to_pixels(
+            bbox_normalized=bbox_normalized,
+            image_width=width,
+            image_height=height,
+        )
+
 
 # Test rapide
 if __name__ == "__main__":
+    from PIL import ImageDraw
+    
     orchestrator = OmniParserOrchestrator()
     
+    image_path = "tests/_data/images/screenshots/screenshot-Google Pixel 5-11.0.png"
     result = orchestrator.find_element(
         element_description="YouTube icon",
-        image_path="tests/_data/images/screenshots/screenshot-Google Pixel 5-11.0.png",
+        image_path=image_path,
         element_type="interactive",
     )
     
@@ -163,9 +243,51 @@ if __name__ == "__main__":
     if result:
         print(f"Element trouvé: {result['element_key']}")
         print(f"Content: {result['element_data']['content']}")
-        print(f"Bbox: {result['element_data']['bbox']}")
+        print(f"Bbox normalisée: {result['element_data']['bbox']}")
         print(f"Confidence: {result['confidence']}")
         print(f"Reason: {result['reason']}")
+        
+        # Conversion en coordonnées pixels
+        print("\n" + "=" * 80)
+        print("Conversion en coordonnées pixels:")
+        
+        bbox_normalized = result['element_data']['bbox']
+        bbox_pixels = orchestrator.bbox_to_pixels_from_image(bbox_normalized, image_path)
+        print(f"Bbox pixels: {bbox_pixels}")
+        
+        # Calculer le centre
+        x1, y1, x2, y2 = bbox_pixels
+        center_x = (x1 + x2) // 2
+        center_y = (y1 + y2) // 2
+        print(f"Centre: ({center_x}, {center_y})")
+        
+        # Dessiner un point sur l'image
+        print("\n" + "=" * 80)
+        print("Création de l'image avec marqueur...")
+        
+        img = Image.open(image_path)
+        draw = ImageDraw.Draw(img)
+        
+        # Dessiner un rectangle autour de l'élément
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+        
+        # Dessiner un point au centre
+        point_radius = 10
+        draw.ellipse(
+            [center_x - point_radius, center_y - point_radius,
+             center_x + point_radius, center_y + point_radius],
+            fill="red",
+            outline="white",
+            width=2
+        )
+        
+        # Sauvegarder l'image
+        output_path = "test_output_with_marker.png"
+        img.save(output_path)
+        print(f"✅ Image sauvegardée: {output_path}")
+        print(f"   - Rectangle rouge autour de l'élément")
+        print(f"   - Point rouge au centre ({center_x}, {center_y})")
+        
     else:
         print("Aucun élément trouvé")
 
