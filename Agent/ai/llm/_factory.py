@@ -1,8 +1,8 @@
 from typing import Optional, Callable, Dict
-from Agent.agent.llm._baseclient import BaseLLMClient
-from Agent.agent.llm._openaiclient import OpenAIClient
-from Agent.agent.llm._anthropic import AnthropicClient
-from Agent.agent.llm._gemini import GeminiClient
+from Agent.ai.llm._baseclient import BaseLLMClient
+from Agent.ai.llm._openaiclient import OpenAIClient
+from Agent.ai.llm._anthropic import AnthropicClient
+from Agent.ai.llm._gemini import GeminiClient
 from Agent.config.model_config import ModelConfig
 from Agent.config.config import Config
 

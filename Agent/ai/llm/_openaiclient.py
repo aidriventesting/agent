@@ -2,7 +2,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from typing import Optional, Dict, List, Union
 from Agent.utilities._logger import RobotCustomLogger
-from Agent.agent.llm._baseclient import BaseLLMClient
+from Agent.ai.llm._baseclient import BaseLLMClient
 
 
 class OpenAIClient(BaseLLMClient):

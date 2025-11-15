@@ -1,0 +1,15 @@
+# Robot Framework Agent - BrowserStack Dependencies
+# For BrowserStack cloud testing
+# Install: pip install -r requirements-browserstack.txt
+
+# ============================================================================
+# Include production dependencies
+# ============================================================================
+-r requirements.txt
+
+# ============================================================================
+# BrowserStack Tools
+# ============================================================================
+browserstack-sdk>=1.30.0    # BrowserStack SDK
+browserstack-local>=1.2.0   # Local testing tunnel
+

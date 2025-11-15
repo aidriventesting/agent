@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from Agent.agent.llm.facade import UnifiedLLMFacade
-from Agent.agent._promptcomposer import AgentPromptComposer
-from Agent.agent.vlm import OmniParserOrchestrator, OmniParserResultProcessor, OmniParserSelection
+from Agent.ai.llm.facade import UnifiedLLMFacade
+from Agent.ai._promptcomposer import AgentPromptComposer
 from Agent.utilities._logger import RobotCustomLogger
 from Agent.utilities.imguploader.imghandler import ImageUploader
 
@@ -16,7 +15,6 @@ class AiConnector:
         self.prompt = AgentPromptComposer(locale="fr")
         # Image uploader never crashes; fallbacks to base64 if no provider configured
         self.image_uploader = ImageUploader(service="auto")
-        self.omni_orchestrator = OmniParserOrchestrator(logger_instance=self.logger)
 
     # ----------------------- Public API -----------------------
     def ask_ai_do(

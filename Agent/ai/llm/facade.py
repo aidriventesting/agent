@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from Agent.utilities._logger import RobotCustomLogger
 from Agent.utilities._jsonutils import extract_json_safely
-from Agent.agent.llm._factory import LLMClientFactory
+from Agent.ai.llm._factory import LLMClientFactory
 
 
 class UnifiedLLMFacade:

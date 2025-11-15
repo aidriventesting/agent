@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from Agent.utilities._logger import RobotCustomLogger
 from Agent.platforms import DeviceConnector
-from Agent.agent._aiconnector import AiConnector
+from Agent.ai._aiconnector import AiConnector
 from Agent.utilities.imguploader.imghandler import ImageUploader
 
 class AgentStepRunner:

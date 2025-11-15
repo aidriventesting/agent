@@ -25,20 +25,20 @@ class AgentKeywords:
         self.engine = AgentStepRunner(llm_client=llm_client, llm_model=llm_model)
 
     # ----------------------- Public RF Keywords -----------------------
-    def agent_do(self, instruction: str):
+    def do(self, instruction: str):
         """Agent.Do <instruction>
         Example: Agent.Do    accepte les cookies
         """
         self.engine.do(instruction)
 
-    def agent_check(self, instruction: str):
+    def check(self, instruction: str):
         """Agent.VisualCheck <instruction>
         Example: Agent.VisualCheck    vérifier que l'écran affiche le logo de l'application
         """
         self.engine.visual_check(instruction)
 
 
-    def agent_autonumous(self, instruction: str):
+    def autonumous(self, instruction: str):
         """Agent.Autonumous <instruction>
         This keyword is designed to autonomously plan and execute a test based on the 
         given single instruction.

@@ -1,11 +1,33 @@
-openai
-anthropic
-google-generativeai
-tiktoken
-Pillow
-requests
-python-dotenv
-gradio_client
-robotframework
-robotframework-appiumlibrary
-Appium-Python-Client
+# Robot Framework Agent - Production Dependencies
+# Install: pip install -r requirements.txt
+
+# ============================================================================
+# Core Framework
+# ============================================================================
+robotframework>=6.0
+robotframework-appiumlibrary>=3.0
+Appium-Python-Client>=5.0
+
+# ============================================================================
+# LLM Providers (at least one required)
+# ============================================================================
+# OpenAI (default provider)
+openai>=1.0.0
+
+# Uncomment if you use these providers:
+# anthropic>=0.20.0        # For Claude models
+# google-generativeai>=0.3.0   # For Gemini models
+
+# ============================================================================
+# Utilities
+# ============================================================================
+Pillow>=10.0.0              # Image processing
+tiktoken>=0.5.0             # Token counting for LLMs
+python-dotenv>=1.0.0        # Environment variables
+requests>=2.31.0            # HTTP requests (image upload)
+
+# ============================================================================
+# Optional: Vision Features
+# ============================================================================
+# Uncomment if you use OmniParser or advanced visual features:
+# gradio-client>=1.0.0

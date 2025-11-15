@@ -1,0 +1,22 @@
+# Include the license file
+include LICENSE
+
+# Include the readme
+include readme.md
+
+# Include configuration files
+include Agent/config/*.json
+
+# Exclude test data and other non-essential files
+exclude tests/*
+exclude atest_agent.robot
+exclude browserstack.yml
+exclude *.log
+exclude *.html
+exclude *.xml
+
+# Exclude virtual environment and cache
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+
