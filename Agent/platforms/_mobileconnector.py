@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
-from src.AiHelper.utilities._logger import RobotCustomLogger
+from Agent.utilities._logger import RobotCustomLogger
 
 
 class DeviceConnector:

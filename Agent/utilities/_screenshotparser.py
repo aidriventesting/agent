@@ -1,4 +1,4 @@
-from src.AiHelper.utilities._logger import RobotCustomLogger
+from Agent.utilities._logger import RobotCustomLogger
 
 
 class BBoxToClickCoordinates:

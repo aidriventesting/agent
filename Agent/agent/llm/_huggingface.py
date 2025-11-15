@@ -5,7 +5,7 @@ from PIL import Image
 import io
 from gradio_client import Client, handle_file
 from robot.libraries.BuiltIn import BuiltIn
-from src.AiHelper.utilities._logger import RobotCustomLogger
+from Agent.utilities._logger import RobotCustomLogger
 
 
 class OmniParser:

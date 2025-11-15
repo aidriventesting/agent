@@ -5,8 +5,8 @@ import fcntl
 from typing import List, Dict, Tuple, Any
 from dataclasses import dataclass
 import warnings
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.config.model_config import ModelConfig
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.config.model_config import ModelConfig
 
 @dataclass
 class TokenStats:

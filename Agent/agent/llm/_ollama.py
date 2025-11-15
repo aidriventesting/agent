@@ -2,8 +2,8 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from typing import Optional, Dict, List, Union
 import os
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.agent.llm._baseclient import BaseLLMClient
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.agent.llm._baseclient import BaseLLMClient
 
 
 class OllamaClient(BaseLLMClient):

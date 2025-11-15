@@ -1,9 +1,9 @@
 from typing import Optional
-from src.AiHelper.config.config import Config
-from src.AiHelper.utilities.imguploader._imgbb import ImgBBUploader
-from src.AiHelper.utilities.imguploader._imghost import FreeImageHostUploader
-from src.AiHelper.utilities.imguploader._imgbase import BaseImageUploader
-from src.AiHelper.utilities._logger import RobotCustomLogger
+from Agent.config.config import Config
+from Agent.utilities.imguploader._imgbb import ImgBBUploader
+from Agent.utilities.imguploader._imghost import FreeImageHostUploader
+from Agent.utilities.imguploader._imgbase import BaseImageUploader
+from Agent.utilities._logger import RobotCustomLogger
 
 
 class ImageUploader:

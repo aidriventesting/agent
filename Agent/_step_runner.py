@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.platforms import DeviceConnector
-from src.AiHelper.agent._aiconnector import AiConnector
-from src.AiHelper.utilities.imguploader.imghandler import ImageUploader
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.platforms import DeviceConnector
+from Agent.agent._aiconnector import AiConnector
+from Agent.utilities.imguploader.imghandler import ImageUploader
 
 class AgentStepRunner:
     """Orchestrates the Agent.Do and Agent.VisualCheck flows without relying on Robot Framework.

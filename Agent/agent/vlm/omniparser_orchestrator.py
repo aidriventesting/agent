@@ -2,9 +2,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from robot.api import logger
 from PIL import Image
 
-from src.AiHelper.agent.vlm.omniparser_client import OmniParserClient
-from src.AiHelper.agent.vlm.omniparser_parser import OmniParserResultProcessor
-from src.AiHelper.agent.vlm.omniparser_selector import OmniParserElementSelector
+from Agent.agent.vlm.omniparser_client import OmniParserClient
+from Agent.agent.vlm.omniparser_parser import OmniParserResultProcessor
+from Agent.agent.vlm.omniparser_selector import OmniParserElementSelector
 
 
 class OmniParserOrchestrator:

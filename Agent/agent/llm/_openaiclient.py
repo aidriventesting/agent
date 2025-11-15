@@ -1,8 +1,8 @@
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from typing import Optional, Dict, List, Union
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.agent.llm._baseclient import BaseLLMClient
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.agent.llm._baseclient import BaseLLMClient
 
 
 class OpenAIClient(BaseLLMClient):
@@ -16,7 +16,7 @@ class OpenAIClient(BaseLLMClient):
         self.logger = RobotCustomLogger()
         self.api_key: str = api_key
         if not self.api_key:
-            from src.AiHelper.config.config import Config
+            from Agent.config.config import Config
             config = Config()
             self.api_key = config.OPENAI_API_KEY
 

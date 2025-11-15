@@ -232,33 +232,6 @@
       },
       "max_context_tokens": 65536
     },
-    "qwen-max": {
-      "provider": "qwen",
-      "display_name": "Qwen Max",
-      "pricing": {
-        "input": 0.0016,
-        "output": 0.0064
-      },
-      "max_context_tokens": 131072
-    },
-    "qwen-plus": {
-      "provider": "qwen",
-      "display_name": "Qwen Plus",
-      "pricing": {
-        "input": 0.0004,
-        "output": 0.0012
-      },
-      "max_context_tokens": 131072
-    },
-    "qwen-turbo": {
-      "provider": "qwen",
-      "display_name": "Qwen Turbo",
-      "pricing": {
-        "input": 0.00005,
-        "output": 0.0002
-      },
-      "max_context_tokens": 1000000
-    },
     "llama3.2": {
       "provider": "ollama",
       "display_name": "Llama 3.2 (3B)",
@@ -339,16 +312,6 @@
       "max_context_tokens": 8192,
       "notes": "Local model, Google's open model"
     },
-    "qwen2.5": {
-      "provider": "ollama",
-      "display_name": "Qwen 2.5 (7B)",
-      "pricing": {
-        "input": 0.0,
-        "output": 0.0
-      },
-      "max_context_tokens": 131072,
-      "notes": "Local model, excellent for multilingual tasks"
-    },
     "deepseek-coder": {
       "provider": "ollama",
       "display_name": "DeepSeek Coder (6.7B)",
@@ -370,4 +333,3 @@
     }
   }
 }
-

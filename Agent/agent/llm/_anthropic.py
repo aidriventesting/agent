@@ -1,7 +1,7 @@
 from anthropic import Anthropic, APIError
 from typing import Optional, Dict, List, Union
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.agent.llm._baseclient import BaseLLMClient
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.agent.llm._baseclient import BaseLLMClient
 
 
 class AnthropicClient(BaseLLMClient):
@@ -15,7 +15,7 @@ class AnthropicClient(BaseLLMClient):
         self.api_key: str = api_key
 
         if not self.api_key:
-            from src.AiHelper.config.config import Config
+            from Agent.config.config import Config
             config = Config()
             self.api_key = config.ANTHROPIC_API_KEY
 

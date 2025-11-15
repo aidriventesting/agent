@@ -8,8 +8,8 @@ from typing import Any, Dict, Iterator, Optional, Tuple
 
 from gradio_client import Client, handle_file
 
-from src.AiHelper.config.config import Config
-from src.AiHelper.utilities._logger import RobotCustomLogger
+from Agent.config.config import Config
+from Agent.utilities._logger import RobotCustomLogger
 
 
 class OmniParserError(RuntimeError):

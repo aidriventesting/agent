@@ -1,8 +1,8 @@
 from anthropic import Anthropic, APIError
 from typing import Optional, Dict, List, Union
 import os
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.agent.llm._baseclient import BaseLLMClient
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.agent.llm._baseclient import BaseLLMClient
 
 
 class DeepSeekClient(BaseLLMClient):
@@ -20,7 +20,7 @@ class DeepSeekClient(BaseLLMClient):
         self.api_key: str = api_key
         
         if not self.api_key:
-            from src.AiHelper.config.config import Config
+            from Agent.config.config import Config
             config = Config()
             self.api_key = config.DEEPSEEK_API_KEY
             self.logger.info(f"API key loaded from config file")

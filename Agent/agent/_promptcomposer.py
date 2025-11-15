@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Any
 
-from src.AiHelper.utilities._logger import RobotCustomLogger
-from src.AiHelper.platforms import DeviceConnector
+from Agent.utilities._logger import RobotCustomLogger
+from Agent.platforms import DeviceConnector
 
 
 
