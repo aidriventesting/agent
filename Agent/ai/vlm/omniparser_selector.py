@@ -6,22 +6,22 @@ from Agent.ai.llm.facade import UnifiedLLMFacade
 
 class OmniParserElementSelector:
     """
-    Sélectionne un élément GUI en utilisant ChatGPT.
+    Selects a GUI element using ChatGPT.
     
-    Prend un dictionnaire d'éléments et une description, 
-    puis demande à l'IA de trouver l'élément correspondant.
+    Takes a dictionary of elements and a description,
+    then asks the AI to find the matching element.
     """
 
     def __init__(self, provider: str = "openai", model: str = "gpt-4o-mini") -> None:
         """
-        Initialise le sélecteur avec le modèle d'IA.
+        Initializes the selector with the AI model.
         
         Args:
-            provider: Le fournisseur d'IA (openai, anthropic, etc.)
-            model: Le modèle à utiliser
+            provider: The AI provider (openai, anthropic, etc.)
+            model: The model to use
         """
         self.llm = UnifiedLLMFacade(provider=provider, model=model)
-        logger.info(f"OmniParserElementSelector initialisé avec {provider}/{model}")
+        logger.info(f"OmniParserElementSelector initialized with {provider}/{model}")
 
     def select_element(
         self,
@@ -30,47 +30,47 @@ class OmniParserElementSelector:
         temperature: float = 0.0,
     ) -> Optional[Dict[str, Any]]:
         """
-        Sélectionne l'élément GUI qui correspond à la description.
+        Selects the GUI element that matches the description.
         
         Args:
-            elements_data: Dictionnaire des éléments (ex: {'icon3': {'type': 'icon', ...}})
-            element_description: Description de l'élément à trouver (ex: "YouTube app")
-            temperature: Température pour la génération (0.0 = déterministe)
+            elements_data: Dictionary of elements (e.g., {'icon3': {'type': 'icon', ...}})
+            element_description: Description of the element to find (e.g., "YouTube app")
+            temperature: Temperature for generation (0.0 = deterministic)
             
         Returns:
-            Un dictionnaire avec:
-            - element_key: La clé de l'élément trouvé (ex: 'icon3')
-            - element_data: Les données de l'élément
-            - confidence: Niveau de confiance (optionnel)
-            - reason: Raison du choix (optionnel)
+            A dictionary with:
+            - element_key: The key of the found element (e.g., 'icon3')
+            - element_data: The element data
+            - confidence: Confidence level (optional)
+            - reason: Reason for the choice (optional)
             
-            Retourne None si aucun élément n'est trouvé.
+            Returns None if no element is found.
         """
-        logger.info(f"Recherche de l'élément: '{element_description}'")
-        logger.debug(f"Nombre d'éléments à analyser: {len(elements_data)}")
+        logger.info(f"Searching for element: '{element_description}'")
+        logger.debug(f"Number of elements to analyze: {len(elements_data)}")
 
-        # Construire le prompt
+        # Build the prompt
         messages = self._build_prompt(elements_data, element_description)
         
-        # Envoyer à l'IA
+        # Send to AI
         try:
             response = self.llm.send_ai_request_and_return_response(
                 messages=messages,
                 temperature=temperature
             )
             
-            # Parser la réponse
+            # Parse the response
             result = self._parse_response(response, elements_data)
             
             if result:
-                logger.info(f"✅ Élément trouvé: {result.get('element_key')}")
+                logger.info(f"✅ Element found: {result.get('element_key')}")
             else:
-                logger.warn("❌ Aucun élément correspondant trouvé")
+                logger.warn("❌ No matching element found")
                 
             return result
             
         except Exception as e:
-            logger.error(f"Erreur lors de la sélection: {str(e)}")
+            logger.error(f"Error during selection: {str(e)}")
             return None
 
     def _build_prompt(
@@ -79,37 +79,37 @@ class OmniParserElementSelector:
         element_description: str,
     ) -> list:
         """
-        Construit le prompt pour l'IA.
+        Builds the prompt for the AI.
         
         Args:
-            elements_data: Les éléments UI disponibles
-            element_description: La description de l'élément recherché
+            elements_data: The available UI elements
+            element_description: The description of the element being searched for
             
         Returns:
-            Liste de messages pour l'IA
+            List of messages for the AI
         """
-        # Formater les éléments de manière lisible
+        # Format elements in a readable way
         elements_text = self._format_elements(elements_data)
         
-        system_prompt = """Tu es un assistant spécialisé dans la sélection d'éléments GUI.
-Ta tâche est de trouver l'élément qui correspond le mieux à la description donnée.
+        system_prompt = """You are an assistant specialized in GUI element selection.
+Your task is to find the element that best matches the given description.
 
-Analyse les éléments disponibles et retourne celui qui correspond le mieux.
-Si aucun élément ne correspond, indique 'element_key': null.
+Analyze the available elements and return the one that matches best.
+If no element matches, indicate 'element_key': null.
 
-Réponds UNIQUEMENT en JSON avec cette structure:
+Respond ONLY in JSON with this structure:
 {
-    "element_key": "la clé de l'élément (ex: icon3) ou null",
-    "confidence": "high, medium ou low",
-    "reason": "explication brève de ton choix"
+    "element_key": "the element key (e.g., icon3) or null",
+    "confidence": "high, medium or low",
+    "reason": "brief explanation of your choice"
 }"""
 
-        user_prompt = f"""Éléments disponibles:
+        user_prompt = f"""Available elements:
 {elements_text}
 
-Description de l'élément recherché: "{element_description}"
+Description of the element being searched for: "{element_description}"
 
-Trouve l'élément qui correspond le mieux à cette description."""
+Find the element that best matches this description."""
 
         return [
             {"role": "system", "content": system_prompt},
@@ -118,13 +118,13 @@ Trouve l'élément qui correspond le mieux à cette description."""
 
     def _format_elements(self, elements_data: Dict[str, Dict[str, Any]]) -> str:
         """
-        Formate les éléments pour le prompt.
+        Formats elements for the prompt.
         
         Args:
-            elements_data: Les éléments à formater
+            elements_data: The elements to format
             
         Returns:
-            String formaté des éléments
+            Formatted string of elements
         """
         lines = []
         for key, data in elements_data.items():
@@ -145,27 +145,27 @@ Trouve l'élément qui correspond le mieux à cette description."""
         elements_data: Dict[str, Dict[str, Any]],
     ) -> Optional[Dict[str, Any]]:
         """
-        Parse la réponse de l'IA.
+        Parses the AI response.
         
         Args:
-            response: La réponse JSON de l'IA
-            elements_data: Les éléments originaux
+            response: The JSON response from the AI
+            elements_data: The original elements
             
         Returns:
-            Dictionnaire avec l'élément trouvé ou None
+            Dictionary with the found element or None
         """
         element_key = response.get("element_key")
         
-        # Si aucun élément trouvé
+        # If no element found
         if not element_key or element_key == "null":
             return None
         
-        # Vérifier que l'élément existe
+        # Check that the element exists
         if element_key not in elements_data:
-            logger.warn(f"L'élément '{element_key}' retourné n'existe pas dans les données")
+            logger.warn(f"The returned element '{element_key}' does not exist in the data")
             return None
         
-        # Construire le résultat
+        # Build the result
         return {
             "element_key": element_key,
             "element_data": elements_data[element_key],
@@ -174,9 +174,9 @@ Trouve l'élément qui correspond le mieux à cette description."""
         }
 
 
-# Test rapide
+# Quick test
 if __name__ == "__main__":
-    # Exemple de données
+    # Example data
     test_data = {
         'icon3': {
             'type': 'icon',
@@ -202,5 +202,5 @@ if __name__ == "__main__":
     result = selector.select_element(test_data, "YouTube")
     
     print("=" * 80)
-    print(f"Résultat: {result}")
+    print(f"Result: {result}")
 
