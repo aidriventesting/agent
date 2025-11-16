@@ -1,7 +1,7 @@
 from anthropic import Anthropic, APIError
 from typing import Optional, Dict, List, Union
 import os
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.ai.llm._baseclient import BaseLLMClient
 
 
@@ -16,14 +16,13 @@ class DeepSeekClient(BaseLLMClient):
         model: str = "deepseek-chat",
         max_retries: int = 3,
     ):
-        self.logger = RobotCustomLogger()
         self.api_key: str = api_key
         
         if not self.api_key:
             from Agent.config.config import Config
             config = Config()
             self.api_key = config.DEEPSEEK_API_KEY
-            self.logger.info(f"API key loaded from config file")
+            logger.debug(f"API key loaded from config file")
             
         if not self.api_key:
             raise ValueError("API key must be provided either as an argument or in the environment variables.")
@@ -100,19 +99,19 @@ class DeepSeekClient(BaseLLMClient):
             response = self.client.messages.create(**api_params)
             
             # Log usage
-            self.logger.info(
+            logger.debug(
                 f"DeepSeek API call successful. Tokens used: {response.usage.input_tokens + response.usage.output_tokens}",
                 True
             )
-            self.logger.info(f"Response: {response}")
+            logger.debug(f"Response: {response}")
             
             return response
             
         except APIError as e:
-            self.logger.error(f"DeepSeek API Error: {str(e)}", True)
+            logger.error(f"DeepSeek API Error: {str(e)}", True)
             raise
         except Exception as e:
-            self.logger.error(f"Unexpected error: {str(e)}", True)
+            logger.error(f"Unexpected error: {str(e)}", True)
             raise
 
     def _transform_content(self, content):
@@ -177,7 +176,7 @@ class DeepSeekClient(BaseLLMClient):
                                 }
                             })
                         except (ValueError, IndexError) as e:
-                            self.logger.error(f"Invalid base64 image URL format: {e}")
+                            logger.error(f"Invalid base64 image URL format: {e}")
                             continue
                     else:
                         # Regular URL
@@ -194,7 +193,7 @@ class DeepSeekClient(BaseLLMClient):
                 if "source" in item:
                     transformed.append(item)
                 else:
-                    self.logger.warning("Image item missing 'source' field")
+                    logger.warn("Image item missing 'source' field")
             
             # Pass through any other content types
             else:
@@ -205,10 +204,10 @@ class DeepSeekClient(BaseLLMClient):
     def _validate_parameters(self, temperature: float, top_p: float):
         """Validate API parameters. DeepSeek supports temperature 0-2.0."""
         if not (0 <= temperature <= 2.0):
-            self.logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2.0 for DeepSeek")
+            logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2.0 for DeepSeek")
             raise ValueError(f"Invalid temperature {temperature}. Must be between 0 and 2.0")
         if not (0 <= top_p <= 1):
-            self.logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
+            logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
             raise ValueError(f"Invalid top_p {top_p}. Must be between 0 and 1")
 
     def format_response(
@@ -229,7 +228,7 @@ class DeepSeekClient(BaseLLMClient):
             Standardized response dictionary
         """
         if not response or not response.content:
-            self.logger.error(f"Invalid response or no content in the response", True)
+            logger.error(f"Invalid response or no content in the response", True)
             return {}
         
         # Extract text content (follows Anthropic's format)
@@ -243,7 +242,7 @@ class DeepSeekClient(BaseLLMClient):
         }
         
         if include_tokens and response.usage:
-            self.logger.info(f"Tokens used: input={response.usage.input_tokens}, output={response.usage.output_tokens}")
+            logger.debug(f"Tokens used: input={response.usage.input_tokens}, output={response.usage.output_tokens}")
             result.update({
                 "prompt_tokens": response.usage.input_tokens,
                 "completion_tokens": response.usage.output_tokens,
@@ -251,7 +250,7 @@ class DeepSeekClient(BaseLLMClient):
             })
             
         if include_reason:
-            self.logger.info(f"Stop reason: {response.stop_reason}")
+            logger.debug(f"Stop reason: {response.stop_reason}")
             result["finish_reason"] = response.stop_reason
             
         return result

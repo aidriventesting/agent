@@ -1,7 +1,7 @@
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from typing import Optional, Dict, List, Union
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.ai.llm._baseclient import BaseLLMClient
 
 
@@ -13,7 +13,6 @@ class OpenAIClient(BaseLLMClient):
         max_retries: int = 3,
         base_backoff: int = 2,
     ):
-        self.logger = RobotCustomLogger()
         self.api_key: str = api_key
         if not self.api_key:
             from Agent.config.config import Config
@@ -46,19 +45,19 @@ class OpenAIClient(BaseLLMClient):
                 top_p=top_p,
                 **kwargs
             )
-            self.logger.info(f"OpenAI API call successful. Tokens used: {response.usage.total_tokens}", True)
-            self.logger.info(f"messages: {response}")
+            logger.debug(f"OpenAI API call successful. Tokens used: {response.usage.total_tokens}", True)
+            logger.debug(f"messages: {response}")
             return response
         except Exception as e:
-            self.logger.error(f"OpenAI API Error: {str(e)}", True)
+            logger.error(f"OpenAI API Error: {str(e)}", True)
             raise
 
     def _validate_parameters(self, temperature: float, top_p: float):
         if not (0 <= temperature <= 2):
-            self.logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2")
+            logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2")
             raise ValueError(f"Invalid temperature {temperature}. Must be between 0 and 2")
         if not (0 <= top_p <= 1):
-            self.logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
+            logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
             raise ValueError(f"Invalid top_p {top_p}. Must be between 0 and 1")
 
     def format_response(
@@ -68,7 +67,7 @@ class OpenAIClient(BaseLLMClient):
         include_reason: bool = False,
     ) -> Dict[str, Union[str, int]]:
         if not response or not response.choices:
-            self.logger.error(f"Invalid response or no choices in the response", True)
+            logger.error(f"Invalid response or no choices in the response", True)
             return {}
 
         result = {
@@ -76,7 +75,7 @@ class OpenAIClient(BaseLLMClient):
         }
 
         if include_tokens:
-            self.logger.info(f"Tokens used: {response.usage}")
+            logger.debug(f"Tokens used: {response.usage}")
             result.update(
                 {
                     "prompt_tokens": response.usage.prompt_tokens,
@@ -86,7 +85,7 @@ class OpenAIClient(BaseLLMClient):
             )
 
         if include_reason:
-            self.logger.info(f"Finish reason: {response.choices[0].finish_reason}")
+            logger.debug(f"Finish reason: {response.choices[0].finish_reason}")
             result["finish_reason"] = response.choices[0].finish_reason
 
         return result

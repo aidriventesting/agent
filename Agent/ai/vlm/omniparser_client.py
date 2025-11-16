@@ -9,8 +9,7 @@ from typing import Any, Dict, Iterator, Optional, Tuple
 from gradio_client import Client, handle_file
 
 from Agent.config.config import Config
-from Agent.utilities._logger import RobotCustomLogger
-
+from robot.api import logger
 
 class OmniParserError(RuntimeError):
     """Base exception raised when the OmniParser Hugging Face space fails."""
@@ -32,9 +31,7 @@ class OmniParserClient:
         space_id: Optional[str] = None,
         api_name: Optional[str] = None,
         hf_token: Optional[str] = None,
-        logger: Optional[RobotCustomLogger] = None,
     ) -> None:
-        self.logger = logger or RobotCustomLogger()
         self.space_id = space_id or Config.OMNIPARSER_SPACE
         self.api_name = api_name or Config.OMNIPARSER_API_NAME
         self.hf_token = hf_token or Config.get_huggingface_token() or None
@@ -45,7 +42,7 @@ class OmniParserClient:
 
         try:
             self._client = Client(self.space_id, **client_kwargs)
-            self.logger.info(f"Initialized OmniParser client for space '{self.space_id}'")
+            logger.debug(f"Initialized OmniParser client for space '{self.space_id}'")
         except Exception as exc:  # pragma: no cover - network failure
             raise OmniParserError(f"Failed to initialise OmniParser client: {exc}") from exc
 
@@ -68,12 +65,12 @@ class OmniParserClient:
         temp_path: Optional[str] = None
         try:
             if image_path:
-                self.logger.debug(f"Using local image path for OmniParser: {image_path}")
+                logger.debug(f"Using local image path for OmniParser: {image_path}")
                 yield handle_file(image_path)
                 return
 
             if image_url:
-                self.logger.debug(f"Using remote image URL for OmniParser: {image_url}")
+                logger.debug(f"Using remote image URL for OmniParser: {image_url}")
                 yield handle_file(image_url)
                 return
 
@@ -92,7 +89,7 @@ class OmniParserClient:
             if temp_path and os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
-                    self.logger.debug(f"Deleted temporary image file: {temp_path}")
+                    logger.debug(f"Deleted temporary image file: {temp_path}")
                 except OSError:
                     pass
 
@@ -117,7 +114,7 @@ class OmniParserClient:
             use_paddleocr=use_paddleocr,
             imgsz=imgsz,
         )
-        self.logger.debug(f"OmniParser parameters: {params}")
+        logger.debug(f"OmniParser parameters: {params}")
         return params
 
     def parse_image(
@@ -171,8 +168,8 @@ class OmniParserClient:
         image_path_result = image_temp_path or ""
         text_result = parsed_text or ""
         
-        self.logger.debug(f"OmniParser temporary image: {image_path_result}")
-        self.logger.debug(f"OmniParser parsed text: {len(text_result)} bytes")
+        logger.debug(f"OmniParser temporary image: {image_path_result}")
+        logger.debug(f"OmniParser parsed text: {len(text_result)} bytes")
         
         return image_path_result, text_result
 

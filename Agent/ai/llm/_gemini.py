@@ -1,7 +1,7 @@
 import google.generativeai as genai
 from google.generativeai.types import GenerateContentResponse
 from typing import Optional, Dict, List, Union
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.ai.llm._baseclient import BaseLLMClient
 
 
@@ -12,7 +12,6 @@ class GeminiClient(BaseLLMClient):
         model: str = "gemini-2.5-flash",
         max_retries: int = 3,
     ):
-        self.logger = RobotCustomLogger()
         self.api_key: str = api_key
 
         if not self.api_key:
@@ -63,14 +62,14 @@ class GeminiClient(BaseLLMClient):
 
             if hasattr(response, "usage_metadata") and response.usage_metadata:
                 total_tokens = response.usage_metadata.prompt_token_count + response.usage_metadata.candidates_token_count
-                self.logger.info(f"Gemini API call successful. Tokens used: {total_tokens}", True)
+                logger.debug(f"Gemini API call successful. Tokens used: {total_tokens}", True)
             else:
-                self.logger.info(f"Gemini API call successful (no usage metadata available)", True)
+                logger.debug(f"Gemini API call successful (no usage metadata available)", True)
 
-            self.logger.info(f"Response: {response}")
+            logger.debug(f"Response: {response}")
             return response
         except Exception as e:
-            self.logger.error(f"Gemini API Error: {str(e)}", True)
+            logger.error(f"Gemini API Error: {str(e)}", True)
             raise
 
     def _convert_messages_to_gemini_format(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
@@ -139,16 +138,16 @@ class GeminiClient(BaseLLMClient):
                 media_type = header.split(";")[0].split(":")[1]
                 return {"inline_data": {"mime_type": media_type, "data": data}}
         except Exception as e:
-            self.logger.error(f"Error processing image URL: {e}", True)
+            logger.error(f"Error processing image URL: {e}", True)
             return None
         return None
 
     def _validate_parameters(self, temperature: float, top_p: float):
         if not (0 <= temperature <= 2):
-            self.logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2")
+            logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2")
             raise ValueError(f"Invalid temperature {temperature}. Must be between 0 and 2")
         if not (0 <= top_p <= 1):
-            self.logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
+            logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
             raise ValueError(f"Invalid top_p {top_p}. Must be between 0 and 1")
 
     def format_response(
@@ -158,7 +157,7 @@ class GeminiClient(BaseLLMClient):
         include_reason: bool = False,
     ) -> Dict[str, Union[str, int]]:
         if not response or not response.candidates:
-            self.logger.error(f"Invalid response or no candidates in the response", True)
+            logger.error(f"Invalid response or no candidates in the response", True)
             return {}
 
         finish_reason = response.candidates[0].finish_reason
@@ -166,13 +165,13 @@ class GeminiClient(BaseLLMClient):
         try:
             content_text = response.text
         except Exception as e:
-            self.logger.warning(f"Cannot extract text from response: {e}", True)
+            logger.warn(f"Cannot extract text from response: {e}", True)
             if finish_reason == 2:
                 content_text = "[Content blocked by safety filters]"
-                self.logger.warning("Response blocked by Gemini safety filters", True)
+                logger.warn("Response blocked by Gemini safety filters", True)
             elif finish_reason == 3:
                 content_text = "[Content blocked by recitation filter]"
-                self.logger.warning("Response blocked by recitation filter", True)
+                logger.warn("Response blocked by recitation filter", True)
             else:
                 content_text = f"[No content available - finish_reason: {finish_reason_name}]"
 
@@ -181,7 +180,7 @@ class GeminiClient(BaseLLMClient):
             prompt_tokens = response.usage_metadata.prompt_token_count
             completion_tokens = response.usage_metadata.candidates_token_count
             total_tokens = prompt_tokens + completion_tokens
-            self.logger.info(f"Tokens used: input={prompt_tokens}, output={completion_tokens}")
+            logger.debug(f"Tokens used: input={prompt_tokens}, output={completion_tokens}")
             result.update(
                 {
                     "prompt_tokens": prompt_tokens,
@@ -190,7 +189,7 @@ class GeminiClient(BaseLLMClient):
                 }
             )
         if include_reason and response.candidates:
-            self.logger.info(f"Finish reason: {finish_reason_name}")
+            logger.debug(f"Finish reason: {finish_reason_name}")
             result["finish_reason"] = finish_reason_name
         return result
 

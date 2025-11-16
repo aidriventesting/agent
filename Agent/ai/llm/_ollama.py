@@ -2,7 +2,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from typing import Optional, Dict, List, Union
 import os
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.ai.llm._baseclient import BaseLLMClient
 
 
@@ -25,7 +25,6 @@ class OllamaClient(BaseLLMClient):
         base_url: str = "http://localhost:11434/v1",
         max_retries: int = 3,
     ):
-        self.logger = RobotCustomLogger()
         self.default_model = model
         self.base_url = base_url
         self.max_retries = max_retries
@@ -38,7 +37,7 @@ class OllamaClient(BaseLLMClient):
             max_retries=max_retries
         )
         
-        self.logger.info(f"Ollama client initialized with base_url: {base_url}")
+        logger.debug(f"Ollama client initialized with base_url: {base_url}")
 
     def create_chat_completion(
         self,
@@ -76,33 +75,33 @@ class OllamaClient(BaseLLMClient):
             )
             
             # Log usage
-            self.logger.info(
+            logger.debug(
                 f"Ollama API call successful. Tokens used: {response.usage.total_tokens}",
                 True
             )
-            self.logger.info(f"Response: {response}")
+            logger.debug(f"Response: {response}")
             
             return response
             
         except Exception as e:
             error_msg = str(e)
             if "Connection" in error_msg or "refused" in error_msg:
-                self.logger.error(
+                logger.error(
                     "Cannot connect to Ollama server. Is Ollama running? "
                     "Start it with: ollama serve",
                     True
                 )
             else:
-                self.logger.error(f"Ollama API Error: {error_msg}", True)
+                logger.error(f"Ollama API Error: {error_msg}", True)
             raise
 
     def _validate_parameters(self, temperature: float, top_p: float):
         """Validate API parameters."""
         if not (0 <= temperature <= 2):
-            self.logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2")
+            logger.error(f"Invalid temperature {temperature}. Must be between 0 and 2")
             raise ValueError(f"Invalid temperature {temperature}. Must be between 0 and 2")
         if not (0 <= top_p <= 1):
-            self.logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
+            logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
             raise ValueError(f"Invalid top_p {top_p}. Must be between 0 and 1")
 
     def format_response(
@@ -123,7 +122,7 @@ class OllamaClient(BaseLLMClient):
             Standardized response dictionary
         """
         if not response or not response.choices:
-            self.logger.error(f"Invalid response or no choices in the response", True)
+            logger.error(f"Invalid response or no choices in the response", True)
             return {}
             
         result = {
@@ -131,7 +130,7 @@ class OllamaClient(BaseLLMClient):
         }
         
         if include_tokens and response.usage:
-            self.logger.info(f"Tokens used: {response.usage}")
+            logger.debug(f"Tokens used: {response.usage}")
             result.update({
                 "prompt_tokens": response.usage.prompt_tokens,
                 "completion_tokens": response.usage.completion_tokens,
@@ -139,7 +138,7 @@ class OllamaClient(BaseLLMClient):
             })
             
         if include_reason:
-            self.logger.info(f"Finish reason: {response.choices[0].finish_reason}")
+            logger.debug(f"Finish reason: {response.choices[0].finish_reason}")
             result["finish_reason"] = response.choices[0].finish_reason
             
         return result

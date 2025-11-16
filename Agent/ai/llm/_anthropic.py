@@ -1,6 +1,6 @@
 from anthropic import Anthropic, APIError
 from typing import Optional, Dict, List, Union
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.ai.llm._baseclient import BaseLLMClient
 
 
@@ -11,7 +11,6 @@ class AnthropicClient(BaseLLMClient):
         model: str = "claude-sonnet-4-5-20250929",
         max_retries: int = 3,
     ):
-        self.logger = RobotCustomLogger()
         self.api_key: str = api_key
 
         if not self.api_key:
@@ -66,19 +65,19 @@ class AnthropicClient(BaseLLMClient):
 
             response = self.client.messages.create(**api_params)
 
-            self.logger.info(
+            logger.debug(
                 f"Anthropic API call successful. Tokens used: {response.usage.input_tokens + response.usage.output_tokens}",
                 True,
             )
-            self.logger.info(f"Response: {response}")
+            logger.debug(f"Response: {response}")
 
             return response
 
         except APIError as e:
-            self.logger.error(f"Anthropic API Error: {str(e)}", True)
+            logger.error(f"Anthropic API Error: {str(e)}", True)
             raise
         except Exception as e:
-            self.logger.error(f"Unexpected error: {str(e)}", True)
+            logger.error(f"Unexpected error: {str(e)}", True)
             raise
 
     def _transform_content(self, content):
@@ -108,7 +107,7 @@ class AnthropicClient(BaseLLMClient):
                                 }
                             )
                         except (ValueError, IndexError) as e:
-                            self.logger.error(f"Invalid base64 image URL format: {e}")
+                            logger.error(f"Invalid base64 image URL format: {e}")
                             continue
                     else:
                         transformed.append({"type": "image", "source": {"type": "url", "url": url}})
@@ -116,17 +115,17 @@ class AnthropicClient(BaseLLMClient):
                 if "source" in item:
                     transformed.append(item)
                 else:
-                    self.logger.warning("Image item missing 'source' field")
+                    logger.warn("Image item missing 'source' field")
             else:
                 transformed.append(item)
         return transformed if transformed else content
 
     def _validate_parameters(self, temperature: float, top_p: float):
         if not (0 <= temperature <= 1):
-            self.logger.error(f"Invalid temperature {temperature}. Must be between 0 and 1 for Anthropic")
+            logger.error(f"Invalid temperature {temperature}. Must be between 0 and 1 for Anthropic")
             raise ValueError(f"Invalid temperature {temperature}. Must be between 0 and 1")
         if not (0 <= top_p <= 1):
-            self.logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
+            logger.error(f"Invalid top_p {top_p}. Must be between 0 and 1")
             raise ValueError(f"Invalid top_p {top_p}. Must be between 0 and 1")
 
     def format_response(
@@ -136,7 +135,7 @@ class AnthropicClient(BaseLLMClient):
         include_reason: bool = False,
     ) -> Dict[str, Union[str, int]]:
         if not response or not response.content:
-            self.logger.error(f"Invalid response or no content in the response", True)
+            logger.error(f"Invalid response or no content in the response", True)
             return {}
 
         content_text = ""
@@ -149,7 +148,7 @@ class AnthropicClient(BaseLLMClient):
         }
 
         if include_tokens and response.usage:
-            self.logger.info(
+            logger.debug(
                 f"Tokens used: input={response.usage.input_tokens}, output={response.usage.output_tokens}"
             )
             result.update(
@@ -161,7 +160,7 @@ class AnthropicClient(BaseLLMClient):
             )
 
         if include_reason:
-            self.logger.info(f"Stop reason: {response.stop_reason}")
+            logger.debug(f"Stop reason: {response.stop_reason}")
             result["finish_reason"] = response.stop_reason
 
         return result

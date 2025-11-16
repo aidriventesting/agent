@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional
 
 from Agent._step_runner import AgentStepRunner
-from Agent.utilities._logger import RobotCustomLogger
 from robot.api.deco import keyword
 
 
@@ -21,7 +20,6 @@ class AgentKeywords:
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
 
     def __init__(self, llm_client: str = "openai", llm_model: str = "gpt-4o-mini"):
-        self.logger = RobotCustomLogger()
         self.engine = AgentStepRunner(llm_client=llm_client, llm_model=llm_model)
 
     # ----------------------- Public RF Keywords -----------------------

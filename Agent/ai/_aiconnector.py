@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from Agent.ai.llm.facade import UnifiedLLMFacade
 from Agent.ai._promptcomposer import AgentPromptComposer
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.utilities.imguploader.imghandler import ImageUploader
 
 
@@ -10,7 +10,6 @@ class AiConnector:
     """AI connector only: accepts prepared messages, returns parsed JSON result."""
 
     def __init__(self, provider: str = "openai", model: Optional[str] = "gpt-4o-mini") -> None:
-        self.logger = RobotCustomLogger()
         self.llm = UnifiedLLMFacade(provider=provider, model=model)
         self.prompt = AgentPromptComposer(locale="fr")
         # Image uploader never crashes; fallbacks to base64 if no provider configured
@@ -45,9 +44,9 @@ class AiConnector:
 
     # ----------------------- Internals -----------------------
     def _run(self, messages: List[Dict[str, Any]], temperature: float = 0.0) -> Dict[str, Any]:
-        self.logger.info("⏳ Sending prepared messages to AI...")
+        logger.debug("⏳ Sending prepared messages to AI...")
         result = self.llm.send_ai_request_and_return_response(messages, temperature=temperature)
-        self.logger.info(f"📦 AI response parsed: {result}")
+        logger.debug(f"📦 AI response parsed: {result}")
         return result
 
 

@@ -3,8 +3,7 @@ from Agent.config.config import Config
 from Agent.utilities.imguploader._imgbb import ImgBBUploader
 from Agent.utilities.imguploader._imghost import FreeImageHostUploader
 from Agent.utilities.imguploader._imgbase import BaseImageUploader
-from Agent.utilities._logger import RobotCustomLogger
-
+from robot.api import logger
 
 class ImageUploader:
     """
@@ -15,7 +14,6 @@ class ImageUploader:
     """
     def __init__(self, service: str = "auto"):
         self.config = Config()
-        self.logger = RobotCustomLogger()
         self.uploader: Optional[BaseImageUploader] = self._select_uploader(service)
 
     def upload_from_base64(self, base64_data: str) -> Optional[str]:
@@ -25,7 +23,7 @@ class ImageUploader:
         """
         # If no uploader is configured, return the base64
         if self.uploader is None:
-            self.logger.warning(
+            logger.warn(
                 "Fallback: returning the image in base64 (no provider configured)",
                 robot_log=False
             )
@@ -37,7 +35,7 @@ class ImageUploader:
             
             # If the upload fails (returns None), use the fallback
             if result is None:
-                self.logger.warning(
+                logger.warn(
                     "Fallback: returning the image in base64 (upload failed)",
                     robot_log=False
                 )
@@ -47,7 +45,7 @@ class ImageUploader:
             
         except Exception as e:
             # In case of an unexpected error, log and return the base64
-            self.logger.warning(
+            logger.warn(
                 f"Fallback: returning the image in base64 (error: {str(e)})",
                 robot_log=False
             )
@@ -64,7 +62,7 @@ class ImageUploader:
         elif service == "freeimagehost" or (service == "auto" and self.config.FREEIMAGEHOST_API_KEY):
             return FreeImageHostUploader()
         else:
-            self.logger.warning(
+            logger.warn(
                 "No upload service configured. Images will be returned in base64.",
                 robot_log=True
             )

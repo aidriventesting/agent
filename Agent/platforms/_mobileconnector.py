@@ -4,14 +4,10 @@ import xml.etree.ElementTree as ET
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
-from Agent.utilities._logger import RobotCustomLogger
-
+from robot.api import logger
 
 class DeviceConnector:
     """Single-file Appium facade: UI XML, candidates, locators, screenshots."""
-
-    def __init__(self) -> None:
-        self.logger = RobotCustomLogger()
 
     # ---- Driver helpers ----
     def _get_driver(self) -> Any:
@@ -101,16 +97,16 @@ class DeviceConnector:
         ]
 
     def collect_ui_candidates(self, max_items: int = 20) -> List[Dict[str, Any]]:
-        self.logger.info("🔍 Extracting UI context...")
+        logger.debug("🔍 Extracting UI context...")
         xml = self.get_ui_xml()
         xml_length = len(xml)
         xml_preview = xml[:1000] + "..." if xml_length > 1000 else xml
-        self.logger.info(f"📱 UI XML retrieved ({xml_length} characters)")
-        self.logger.debug(f"📋 XML preview (truncated): {xml_preview}")
+        logger.debug(f"📱 UI XML retrieved ({xml_length} characters)")
+        logger.debug(f"📋 XML preview (truncated): {xml_preview}")
         candidates = self.parse_ui(xml, max_items=max_items)
-        self.logger.info(f"🎯 Number of UI candidates extracted: {len(candidates)}")
+        logger.debug(f"🎯 Number of UI candidates extracted: {len(candidates)}")
         for i, candidate in enumerate(candidates[:5]):
-            self.logger.debug(f"  Candidate {i+1}: {candidate}")
+            logger.debug(f"  Candidate {i+1}: {candidate}")
         return candidates
 
     # ---- Screenshot helpers ----

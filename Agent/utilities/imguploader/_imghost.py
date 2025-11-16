@@ -1,9 +1,9 @@
 import os
 from typing import Optional
 import requests
-from Agent.utilities._logger import RobotCustomLogger
 from Agent.config.config import Config
 from Agent.utilities.imguploader._imgbase import BaseImageUploader
+from robot.api import logger
 
 
 class FreeImageHostUploader(BaseImageUploader):
@@ -11,13 +11,12 @@ class FreeImageHostUploader(BaseImageUploader):
         self.config = Config()
         self.base_url = "https://freeimage.host/api/1/upload"
         self.headers = {"Accept": "application/json"}
-        self.logger = RobotCustomLogger()
 
     @property
     def api_key(self):
         api_key = self.config.FREEIMAGEHOST_API_KEY
         if not api_key:
-            self.logger.error("FREEIMAGEHOST_API_KEY not found in configuration")
+            logger.error("FREEIMAGEHOST_API_KEY not found in configuration")
         return api_key
 
     def _make_request(self, payload: dict, files: bool = False) -> Optional[str]:
@@ -30,13 +29,13 @@ class FreeImageHostUploader(BaseImageUploader):
             json_data = response.json()
             return self._extract_url(json_data)
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"From image host uploader: API Request Failed: {e}")
+            logger.error(f"From image host uploader: API Request Failed: {e}")
             return None
         except ValueError:
-            self.logger.error("From image host uploader: Invalid JSON response from API")
+            logger.error("From image host uploader: Invalid JSON response from API")
             return None
         except Exception as e:
-            self.logger.error(f"From image host uploader: Other unexpected error: {e}")
+            logger.error(f"From image host uploader: Other unexpected error: {e}")
             return None
 
     def _extract_url(self, json_data: dict) -> Optional[str]:

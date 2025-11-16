@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from Agent.utilities._logger import RobotCustomLogger
 from Agent.platforms import DeviceConnector
 from Agent.ai._aiconnector import AiConnector
 from Agent.utilities.imguploader.imghandler import ImageUploader
+from robot.api import logger
 
 class AgentStepRunner:
     """Orchestrates the Agent.Do and Agent.VisualCheck flows without relying on Robot Framework.
@@ -19,7 +19,6 @@ class AgentStepRunner:
     """
 
     def __init__(self, llm_client: str = "openai", llm_model: str = "gpt-4o-mini", platform: Optional[DeviceConnector] = None) -> None:
-        self.logger = RobotCustomLogger()
         # Platform
         self.platform: DeviceConnector = platform or DeviceConnector()
         # Agent component
@@ -28,7 +27,7 @@ class AgentStepRunner:
         
     # ----------------------- Public API -----------------------
     def do(self, instruction: str) -> None:
-        self.logger.info(f"🚀 Starting Agent.Do with instruction: '{instruction}'")
+        logger.info(f"🚀 Starting Agent.Do with instruction: '{instruction}'")
 
         ui_candidates = self.platform.collect_ui_candidates()
         # TODO: the final logic will be coded when we have the visual model
@@ -39,28 +38,27 @@ class AgentStepRunner:
             temperature=0,
         )
 
-        self.logger.info("⚡ Executing action...")
+        logger.debug("⚡ Executing action...")
         self._execute_do(result, instruction)
-        self.logger.success("✅ Agent.Do completed successfully")
+        logger.debug("✅ Agent.Do completed successfully")
 
     def visual_check(self, instruction: str) -> None:
-        self.logger.info(f"👁️ Starting Agent.VisualCheck with instruction: '{instruction}'")
+        logger.info(f"👁️ Starting Agent.VisualCheck with instruction: '{instruction}'")
 
         # Log to Robot Framework
-        from robot.api import logger as rf_logger
-        rf_logger.info("=" * 80)
-        rf_logger.info("AGENT VISUAL CHECK STARTED")
-        rf_logger.info("=" * 80)
-        rf_logger.info(f"Instruction: {instruction}")
-        rf_logger.info("Capturing screenshot for AI analysis...")
+        logger.debug("=" * 80)
+        logger.debug("AGENT VISUAL CHECK STARTED")
+        logger.debug("=" * 80)
+        logger.debug(f"Instruction: {instruction}")
+        logger.debug("Capturing screenshot for AI analysis...")
 
         # Capture screenshot
-        self.logger.info("📸 Capturing screenshot...")
+        logger.debug("📸 Capturing screenshot...")
         screenshot_base64 = self.platform.get_screenshot_base64()
         
         # Embed screenshot to Robot Framework log
         self.platform.embed_image_to_log(screenshot_base64, message="Visual Check Screenshot")
-        rf_logger.info("Screenshot captured and sent to AI for analysis")
+        logger.debug("Screenshot captured and sent to AI for analysis")
         image_url = self.image_uploader.upload_from_base64(screenshot_base64)
 
         result = self.agent.ask_ai_visual_check(
@@ -69,27 +67,23 @@ class AgentStepRunner:
             temperature=0,
         )
 
-        self.logger.info("⚡ Executing visual verification...")
+        logger.debug("Executing visual verification...")
         self._execute_visual_check(result)
-        self.logger.success("✅ Agent.VisualCheck completed successfully")
+        logger.debug("Agent.VisualCheck completed successfully")
 
     # ----------------------- Internals -----------------------
     def _run_rf_keyword(self, keyword_name: str, *args: Any) -> Any:
-        from robot.api import logger as rf_logger
         from robot.libraries.BuiltIn import BuiltIn
         try:
             args_str = " ".join([str(a) for a in args]) if args else ""
-            rf_logger.info(f"EXECUTING: {keyword_name} {args_str}".strip())
-            self.logger.info(f"▶️ RF: {keyword_name} {args_str}")
+            logger.debug(f"EXECUTING: {keyword_name} {args_str}".strip())
+            logger.info(f"▶️ RF: {keyword_name} {args_str}")
 
             result = BuiltIn().run_keyword(keyword_name, *args)
 
-            rf_logger.info(f"SUCCESS: {keyword_name} executed successfully")
-            self.logger.success(f"✅ RF success: {keyword_name}")
+            logger.info(f"SUCCESS: {keyword_name} executed successfully")
             return result
         except Exception as exc:
-            rf_logger.error(f"FAILED: {keyword_name} - {exc}")
-            self.logger.error(f"❌ RF failed: {keyword_name} - {exc}")
             raise
 
     def _extract_text_from_instruction(self, instruction: str) -> Optional[str]:
@@ -122,27 +116,27 @@ class AgentStepRunner:
         text = result.get("text")
         candidates = result.get("candidates", []) or []
 
-        self.logger.info(f"🎬 Requested action: {action}")
-        self.logger.info(f"📍 Provided locator: {locator}")
-        self.logger.info(f"📝 Text to input: {text}")
-        self.logger.info(f"🎯 Alternative candidates: {candidates}")
+        logger.debug(f"🎬 Requested action: {action}")
+        logger.debug(f"📍 Provided locator: {locator}")
+        logger.debug(f"📝 Text to input: {text}")
+        logger.debug(f"🎯 Alternative candidates: {candidates}")
 
         if action == "open":
-            self.logger.info("🚪 Executing: Open Application")
+            logger.debug("🚪 Executing: Open Application")
             self._run_rf_keyword("Open Application")
-            self.logger.success("✅ Application opened successfully")
+            logger.debug("✅ Application opened successfully")
             return
 
         if not locator:
             raise AssertionError("No locator available for the action")
 
         rf_locator = self.platform.to_rf_locator(locator)
-        self.logger.info(f"🎯 Converted Robot Framework locator: {rf_locator}")
+        logger.debug(f"🎯 Converted Robot Framework locator: {rf_locator}")
 
         if action == "tap":
-            self.logger.info(f"👆 Executing: Click Element with locator '{rf_locator}'")
+            logger.debug(f"👆 Executing: Click Element with locator '{rf_locator}'")
             self._run_rf_keyword("Click Element", rf_locator)
-            self.logger.success("✅ Element clicked successfully")
+            logger.debug("✅ Element clicked successfully")
             return
 
         if action == "type":
@@ -150,23 +144,23 @@ class AgentStepRunner:
                 text = self._extract_text_from_instruction(instruction)
                 if text is None:
                     raise AssertionError("Agent.Do 'type' requires 'text'")
-                self.logger.info(f"📝 Text automatically extracted from instruction: '{text}'")
-            self.logger.info(f"⌨️ Executing: Input Text '{text}' into locator '{rf_locator}'")
+                logger.debug(f"📝 Text automatically extracted from instruction: '{text}'")
+            logger.debug(f"⌨️ Executing: Input Text '{text}' into locator '{rf_locator}'")
             self._run_rf_keyword("Input Text", rf_locator, text)
-            self.logger.success("✅ Text entered successfully")
+            logger.debug("✅ Text entered successfully")
             return
 
         if action == "clear":
-            self.logger.info(f"🧹 Executing: Clear Text for locator '{rf_locator}'")
+            logger.debug(f"🧹 Executing: Clear Text for locator '{rf_locator}'")
             self._run_rf_keyword("Clear Text", rf_locator)
-            self.logger.success("✅ Text cleared successfully")
+            logger.debug("✅ Text cleared successfully")
             return
 
         if action == "swipe":
-            self.logger.error("🚫 Action 'swipe' not yet implemented")
+            logger.error("🚫 Action 'swipe' not yet implemented")
             raise AssertionError("Swipe not yet implemented in Agent.Do")
 
-        self.logger.error(f"🚫 Unsupported action: {action}")
+        logger.error(f"🚫 Unsupported action: {action}")
         raise AssertionError(f"Unsupported action: {action}")
 
     def _execute_visual_check(self, result: Dict[str, Any]) -> None:
@@ -177,58 +171,53 @@ class AgentStepRunner:
         issues = result.get("issues", [])
 
         # Log to Robot Framework with detailed AI response
-        from robot.api import logger as rf_logger
-        
-        rf_logger.info("=" * 80)
-        rf_logger.info("AI VISUAL VERIFICATION RESPONSE")
-        rf_logger.info("=" * 80)
-        rf_logger.info(f"Verification Result: {'PASS' if verification_result else 'FAIL'}")
-        rf_logger.info(f"Confidence Score: {confidence_score:.2f}")
-        rf_logger.info(f"Analysis: {analysis}")
+        logger.debug("=" * 80)
+        logger.debug("AI VISUAL VERIFICATION RESPONSE")
+        logger.debug("=" * 80)
+        logger.debug(f"Verification Result: {'PASS' if verification_result else 'FAIL'}")
+        logger.debug(f"Confidence Score: {confidence_score:.2f}")
+        logger.debug(f"Analysis: {analysis}")
         
         if found_elements:
-            rf_logger.info(f"Found Elements ({len(found_elements)} total):")
+            logger.debug(f"Found Elements ({len(found_elements)} total):")
             for i, element in enumerate(found_elements[:10], 1):  # Show first 10 elements
                 element_type = element.get("element_type", "unknown")
                 description = element.get("description", "no description")
                 location = element.get("location", "unknown location")
                 confidence = element.get("confidence", 0.0)
-                rf_logger.info(f"  {i}. {element_type}: {description}")
-                rf_logger.info(f"     Location: {location}")
-                rf_logger.info(f"     Confidence: {confidence:.2f}")
+                logger.debug(f"  {i}. {element_type}: {description}")
+                logger.debug(f"     Location: {location}")
+                logger.debug(f"     Confidence: {confidence:.2f}")
         
         if issues:
-            rf_logger.info(f"Issues Found ({len(issues)} total):")
+            logger.debug(f"Issues Found ({len(issues)} total):")
             for i, issue in enumerate(issues, 1):
-                rf_logger.info(f"  {i}. {issue}")
+                logger.debug(f"  {i}. {issue}")
         
-        rf_logger.info("=" * 80)
+        logger.debug("=" * 80)
 
         # Also log to custom logger for consistency
-        self.logger.info(f"🔍 Verification result: {verification_result}")
-        self.logger.info(f"📊 Confidence score: {confidence_score}")
-        self.logger.info(f"📝 Analysis: {analysis}")
+        logger.debug(f"🔍 Verification result: {verification_result}")
+        logger.debug(f"📊 Confidence score: {confidence_score}")
+        logger.debug(f"📝 Analysis: {analysis}")
         
         if found_elements:
-            self.logger.info(f"🎯 Found elements: {len(found_elements)} elements detected")
+            logger.debug(f"🎯 Found elements: {len(found_elements)} elements detected")
             for i, element in enumerate(found_elements[:5], 1):  # Show first 5 elements
                 element_type = element.get("element_type", "unknown")
                 description = element.get("description", "no description")
                 confidence = element.get("confidence", 0.0)
-                self.logger.info(f"  {i}. {element_type}: {description} (confidence: {confidence:.2f})")
+                logger.debug(f"  {i}. {element_type}: {description} (confidence: {confidence:.2f})")
         
         if issues:
-            self.logger.info(f"⚠️ Issues found: {len(issues)} issues detected")
+            logger.debug(f"⚠️ Issues found: {len(issues)} issues detected")
             for i, issue in enumerate(issues[:3], 1):  # Show first 3 issues
-                self.logger.info(f"  {i}. {issue}")
+                logger.debug(f"  {i}. {issue}")
 
         # Assert based on verification result
         if verification_result:
-            self.logger.success("✅ Visual verification passed")
-            rf_logger.info("✅ VISUAL VERIFICATION PASSED")
+            logger.info("✅ Visual verification passed")
         else:
-            self.logger.error("❌ Visual verification failed")
-            rf_logger.error("❌ VISUAL VERIFICATION FAILED")
             error_msg = f"Visual verification failed. Analysis: {analysis}"
             if issues:
                 error_msg += f" Issues: {', '.join(issues[:3])}"

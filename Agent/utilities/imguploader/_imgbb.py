@@ -1,7 +1,7 @@
 import os
 import requests
 from typing import Optional
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.config.config import Config
 from Agent.utilities.imguploader._imgbase import BaseImageUploader
 
@@ -11,13 +11,12 @@ class ImgBBUploader(BaseImageUploader):
         self.config = Config()
         self.base_url = "https://api.imgbb.com/1/upload"
         self.headers = {"Accept": "application/json"}
-        self.logger = RobotCustomLogger()
 
     @property
     def api_key(self):
         api_key = self.config.IMGBB_API_KEY
         if not api_key:
-            self.logger.error("IMGBB_API_KEY not found in configuration")
+            logger.error("IMGBB_API_KEY not found in configuration")
         return api_key
 
     def _make_request(self, payload: dict, files: bool = False) -> Optional[str]:
@@ -30,13 +29,13 @@ class ImgBBUploader(BaseImageUploader):
             json_data = response.json()
             return self._extract_url(json_data)
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"API Request Failed: {e}")
+            logger.error(f"API Request Failed: {e}")
             return None
         except ValueError:
-            self.logger.error("Invalid JSON response from API")
+            logger.error("Invalid JSON response from API")
             return None
         except Exception as e:
-            self.logger.error(f"Unexpected error during image upload: {str(e)}")
+            logger.error(f"Unexpected error during image upload: {str(e)}")
             return None
 
     def _extract_url(self, json_data: dict) -> Optional[str]:

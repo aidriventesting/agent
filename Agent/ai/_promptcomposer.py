@@ -1,6 +1,5 @@
 from typing import List, Dict, Optional, Any
-
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.platforms import DeviceConnector
 
 
@@ -15,7 +14,6 @@ class AgentPromptComposer:
 
     def __init__(self, locale: str = "fr") -> None:
         self.locale = locale
-        self.logger = RobotCustomLogger()
         self.catalog = AgentKeywordCatalog()
 
     # ---- Simple public wrappers for clarity ----
@@ -154,10 +152,8 @@ class AgentPromptComposer:
             "CRITICAL INSTRUCTIONS:\n"
             "- ALWAYS PRIORITIZE the 'xpath' strategy when it is available in the UI context\n"
             "- Use 'xpath' for precise and reliable localization\n"
-            "- Avoid generic 'class_name' like 'button' that finds nothing\n"
-            "- Choose the first element that matches the instruction\n\n"
-            "Constraints: one action only, no multiple attempts. "
-            "If the screen does not allow the requested action, choose the best locator according to the UI context."
+            "- Choose the first element that matches the instruction\n"
+            "Constraints: one action only, no multiple attempts.\n"
         )
 
     def _build_system_prompt_visual_check(self) -> str:
@@ -221,7 +217,7 @@ class AgentPromptComposer:
     ) -> List[Dict[str, Any]]:
         system_message = {"role": "system", "content": self._build_system_prompt_do()}
         user_message = self._build_user_prompt_do(instruction, ui_elements, image_url)
-        self.logger.info("Composed DO prompt with keyword catalog and schema")
+        logger.debug("Composed DO prompt with keyword catalog and schema")
         return [system_message, user_message]
 
     def _compose_visual_check_messages(
@@ -231,7 +227,7 @@ class AgentPromptComposer:
     ) -> List[Dict[str, Any]]:
         system_message = {"role": "system", "content": self._build_system_prompt_visual_check()}
         user_message = self._build_user_prompt_visual_check(instruction, image_url)
-        self.logger.info("Composed VISUAL CHECK prompt with analysis schema")
+        logger.debug("Composed VISUAL CHECK prompt with analysis schema")
         return [system_message, user_message]
 
 
@@ -246,7 +242,6 @@ class AgentKeywordCatalog:
     """
 
     def __init__(self) -> None:
-        self.logger = RobotCustomLogger()
         self._platform = DeviceConnector()
 
     def _get_locator_strategies(self) -> List[str]:

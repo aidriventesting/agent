@@ -42,7 +42,7 @@ class OmniParserOrchestrator:
             provider=llm_provider,
             model=llm_model
         )
-        logger.info("OmniParserOrchestrator initialisé avec succès")
+        logger.debug("OmniParserOrchestrator initialized successfully")
 
     def find_element(
         self,
@@ -94,10 +94,10 @@ class OmniParserOrchestrator:
             
             Retourne None si aucun élément n'est trouvé.
         """
-        logger.info(f"🔍 Recherche de l'élément: '{element_description}'")
+        logger.debug(f"🔍 Recherche de l'élément: '{element_description}'")
         
         # Étape 1: Analyse de l'image avec OmniParser
-        logger.info("📸 Étape 1/3: Analyse de l'image avec OmniParser...")
+        logger.debug("📸 Étape 1/3: Analyse de l'image avec OmniParser...")
         image_temp_path, parsed_text = self.client.parse_image(
             image_path=image_path,
             image_url=image_url,
@@ -114,7 +114,7 @@ class OmniParserOrchestrator:
             return None
         
         # Étape 2: Parse et filtre les éléments par type
-        logger.info(f"🔧 Étape 2/3: Parsing et filtrage des éléments (type={element_type})...")
+        logger.debug(f"🔧 Étape 2/3: Parsing et filtrage des éléments (type={element_type})...")
         processor = OmniParserResultProcessor(
             response_text=parsed_text,
             image_temp_path=image_temp_path,
@@ -125,10 +125,10 @@ class OmniParserOrchestrator:
             logger.error(f"❌ Aucun élément de type '{element_type}' trouvé")
             return None
          
-        logger.info(f"✓ {len(elements_data)} éléments filtrés")
+        logger.debug(f"✓ {len(elements_data)} éléments filtrés")
         
         # Étape 3: Sélection de l'élément via LLM
-        logger.info("🤖 Étape 3/3: Sélection de l'élément via LLM...")
+        logger.debug("🤖 Étape 3/3: Sélection de l'élément via LLM...")
         result = self.selector.select_element(
             elements_data=elements_data,
             element_description=element_description,

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from Agent.utilities._logger import RobotCustomLogger
+from robot.api import logger
 from Agent.utilities._jsonutils import extract_json_safely
 from Agent.ai.llm._factory import LLMClientFactory
 
@@ -12,7 +12,6 @@ class UnifiedLLMFacade:
     """
 
     def __init__(self, provider: str = "openai", model: Optional[str] = None) -> None:
-        self.logger = RobotCustomLogger()
         self._client = LLMClientFactory.create_client(provider, model=model)
 
     def send_ai_request_and_return_response(
@@ -22,17 +21,17 @@ class UnifiedLLMFacade:
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Sends a request to the AI model and returns a parsed JSON response."""
-        self.logger.info("🚀 Sending request to AI model...")
+        logger.debug("🚀 Sending request to AI model...")
         response = self._client.create_chat_completion(
             messages=messages,
             temperature=temperature,
             response_format={"type": "json_object"},
             **kwargs,
         )
-        self.logger.info("📥 Raw AI response received.")
+        logger.debug("📥 Raw AI response received.")
         formatted = self._client.format_response(response)
         content = formatted.get("content", "{}")
-        self.logger.info(f"   Raw content: {content}")
+        logger.debug(f"   Raw content: {content}")
         parsed = extract_json_safely(content)
-        self.logger.info(f"✅ Parsed JSON response: {parsed}")
+        logger.debug(f"✅ Parsed JSON response: {parsed}")
         return parsed
