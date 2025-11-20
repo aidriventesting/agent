@@ -1,6 +1,6 @@
-# Traditional automation problems
+# Traditional automation with code
 
-Even with great tools like Selenium and Appium, E2E automation is expensive to maintain. This doc explains why.
+Even with great tools like Selenium and Appium, writing E2E automation is complex and expensive. This doc shows what traditional automation looks like.
 
 ## How traditional automation works: Locators
 
@@ -48,7 +48,7 @@ Mobile apps have a view hierarchy. Each element has properties:
 
 **Mobile**: IDs are less common. Many elements lack `resource-id` or `content-desc`, forcing fragile XPath locators based on position.
 
-## Before Robot Framework: Raw automation code
+## Raw automation code example
 
 Here's a very basic Selenium test in Python:
 
@@ -90,11 +90,14 @@ def test_user_login():
         driver.quit()
 ```
 
-**Problems**:
+## Problems with raw automation code
+
+**Immediate issues**:
 - **Verbose**: 30+ lines for a simple login test
 - **Technical**: Requires programming knowledge (imports, waits, exception handling)
 - **Fragile**: If `id="username"` changes to `id="email"`, test breaks
 - **Hard to maintain**: Changing one locator means editing code
+- **Not readable**: Non-technical QA can't understand or contribute
 
 ### The real problem: scaling to 100+ tests
 
@@ -108,118 +111,60 @@ This example is **basic**. In reality, when you have 100+ tests, the complexity 
 
 **Result**: E2E automation becomes a software engineering project itself. You need senior developers just to write and maintain tests.
 
-## With Robot Framework: Better but still hard
+## Core problems with locator-based automation
 
-Robot Framework makes tests more readable:
-
-```robot
-*** Settings ***
-Library    SeleniumLibrary
-
-*** Test Cases ***
-User Can Login
-    Open Browser    https://example.com/login    chrome
-    Input Text      id=username    alice@example.com
-    Input Text      id=password    secret123
-    Click Button    xpath=//button[@type='submit']
-    Wait Until Page Contains    Welcome
-    Close Browser
-```
-
-**Better because**:
-- Much more readable
-- QA without deep programming can write/read tests
-- Reusable keywords hide complexity
-- Easy to organize suites and variables
-
-**Still has problems**:
-- You still write locators manually
-- When UI changes, you manually update locators
-- No visual understanding
-- At 100+ tests: still need design patterns, DRY principle, Single Responsibility, good architecture --> Still somehow costly to write and to maintain
-
-## The 8 core problems
+These problems affect all traditional automation, whether raw code or frameworks:
 
 ### 1. Brittle locators
 
-**Problem**: Developer changes `id=submit-button` to `id=submit-btn`.
+Developer changes `id=submit-button` to `id=submit-btn`. Test breaks.
 
-```robot
-Click Button    id=submit-button  # ❌ Breaks
-```
-
-**Cost**: You manually find the new locator and update all tests using it.
+**Cost**: Manually find and update all affected tests.
 
 ### 2. Dynamic content
 
-**Problem**: Dashboard shows "5 new messages" but the number changes based on data.
-
-```robot
-Page Should Contain    5 new messages  # ❌ Fails when count is different
-```
+Dashboard shows "5 new messages" but the number changes based on data.
 
 **Cost**: Tests become data-dependent. Valid builds fail.
 
 ### 3. Timing and async loading
 
-**Problem**: Button appears after an API call, but test clicks too early.
+Button appears after an API call, but test clicks too early.
 
-```robot
-Click Button    id=load-more  # ❌ Fails if button not ready
-```
-
-**Cost**: You add `Sleep 3s`, making tests slow and still flaky.
+**Cost**: Add hardcoded waits (`sleep(3)`), making tests slow and still flaky.
 
 ### 4. Environment-specific data
 
-**Problem**: Production shows "John Doe", staging shows "Test User".
-
-```robot
-Page Should Contain    John Doe  # ❌ Fails in staging
-```
+Production shows "John Doe", staging shows "Test User".
 
 **Cost**: Separate tests per environment or complex variable management.
 
 ### 5. Cross-platform locator differences
 
-**Problem**: Same button, different locators per platform.
-
+Same button, different locators per platform:
 - Web: `id=menu`
 - Android: `resource-id=com.app:id/menu`
 - iOS: `accessibility id=Menu`
-
-```robot
-Click Element    id=menu  # ❌ Only works on web
-```
 
 **Cost**: Write and maintain separate tests for each platform.
 
 ### 6. Visual elements can't be validated
 
-**Problem**: App shows a map, chart, or image. Locators can't verify content.
-
-```robot
-Page Should Contain Element    id=map  # ✓ Map exists
-# ❌ But is the map showing the right data?
-```
+App shows a map, chart, or image. Locators can't verify content.
 
 **Cost**: Visual bugs slip through. Manual testing still needed.
 
 ### 7. Accessibility issues on mobile
 
-**Problem**: Button has no `content-desc` or `resource-id`. Only way to find it is fragile XPath.
-
-```robot
-Click Element    xpath=//android.widget.Button[3]  # ❌ Breaks on layout change
-```
+Button has no `content-desc` or `resource-id`. Only way to find it is fragile XPath based on position.
 
 **Cost**: Tests break on minor UI rearrangements.
 
 ### 8. Complex debugging
 
-**Problem**: Test fails at step 15 of a 20-step flow. You only get "Element not found".
+Test fails at step 15 of a 20-step flow. You only get "Element not found".
 
-**Cost**: You rerun the flow repeatedly, adding print statements, until you find the issue.
+**Cost**: Rerun the flow repeatedly, adding print statements, until you find the issue.
 
 ## Why this matters
 
@@ -235,7 +180,6 @@ Each problem seems small, but they compound:
 
 ## What's next
 
-In the following docs, we'll see:
-- What Robot Framework provides (doc 04)
-- How AI agents solve these problems (doc 05)
+Traditional automation with raw code is too complex. Frameworks like Robot Framework try to solve this by making tests more readable and accessible.
 
+In the next doc, we'll see how Robot Framework improves the situation — and why it's still not enough.

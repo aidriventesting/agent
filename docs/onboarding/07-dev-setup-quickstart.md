@@ -78,5 +78,3 @@ Artifacts location:
 - Missing API key / model name
 - Permission issues for screenshots
 
-See `08-how-we-work.md` + troubleshooting docs for details.
-
