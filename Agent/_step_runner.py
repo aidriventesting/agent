@@ -37,8 +37,8 @@ class AgentStepRunner:
             temperature=0,
         )
 
-        logger.info(f"AI selected: {result}")
-        self._execute_do(result, ui_candidates, instruction)
+        logger.info(f"AI response: {result}")
+        self._execute_do_from_tool_calls(result, ui_candidates, instruction)
         logger.info("✅ Agent.Do completed")
 
     def visual_check(self, instruction: str) -> None:
@@ -67,7 +67,7 @@ class AgentStepRunner:
         )
 
         logger.debug("Executing visual verification...")
-        self._execute_visual_check(result)
+        self._execute_visual_check_from_tool_calls(result)
         logger.debug("Agent.VisualCheck completed successfully")
 
     # ----------------------- Internals -----------------------
@@ -109,49 +109,78 @@ class AgentStepRunner:
                     return text
         return None
 
-    def _execute_do(self, result: Dict[str, Any], ui_candidates: List[Dict[str, Any]], instruction: str) -> None:
-        action = result.get("action")
-        element_index = result.get("element_index")
-        text = result.get("text")
-
-        logger.info(f"Action: {action}, Element Index: {element_index}, Text: {text}")
-
-        # Handle scroll action (no element needed)
-        if action == "scroll_down":
-            logger.info("Scrolling down...")
-            self._run_rf_keyword("Swipe", "50", "80", "50", "20", "500")
-            return
-
-        # Get element and build locator
-        if element_index is None or element_index < 1 or element_index > len(ui_candidates):
-            raise AssertionError(f"Invalid element_index: {element_index}. Must be 1-{len(ui_candidates)}")
+    def _execute_do_from_tool_calls(self, result: Dict[str, Any], ui_candidates: List[Dict[str, Any]], instruction: str) -> None:
+        """Execute actions from tool calls returned by the LLM."""
+        tool_calls = result.get("tool_calls", [])
         
-        element = ui_candidates[element_index - 1]  # Convert 1-based to 0-based
-        rf_locator = self.platform.build_locator_from_element(element)
-        logger.info(f"Built locator: {rf_locator} from element: {element}")
-
-        # Execute action
-        if action == "tap":
+        if not tool_calls:
+            logger.error("No tool calls in response")
+            raise AssertionError("AI did not return any tool calls")
+        
+        # Execute the first tool call (typically there's only one for DO actions)
+        tool_call = tool_calls[0]
+        function_name = tool_call["function"]["name"]
+        arguments = tool_call["function"]["arguments"]
+        
+        logger.info(f"Executing tool: {function_name} with args: {arguments}")
+        
+        if function_name == "tap_element":
+            element_index = arguments.get("element_index")
+            if element_index is None or element_index < 1 or element_index > len(ui_candidates):
+                raise AssertionError(f"Invalid element_index: {element_index}. Must be 1-{len(ui_candidates)}")
+            
+            element = ui_candidates[element_index - 1]
+            rf_locator = self.platform.build_locator_from_element(element)
+            logger.info(f"Built locator: {rf_locator} from element: {element}")
             self._run_rf_keyword("Click Element", rf_locator)
-            return
-
-        if action == "input":
+            
+        elif function_name == "input_text":
+            element_index = arguments.get("element_index")
+            text = arguments.get("text")
+            
+            if element_index is None or element_index < 1 or element_index > len(ui_candidates):
+                raise AssertionError(f"Invalid element_index: {element_index}. Must be 1-{len(ui_candidates)}")
+            
             if not text:
-                text = self._extract_text_from_instruction(instruction)
-                if not text:
-                    raise AssertionError("'input' action requires text")
+                raise AssertionError("'input_text' requires text argument")
+            
+            element = ui_candidates[element_index - 1]
+            rf_locator = self.platform.build_locator_from_element(element)
+            logger.info(f"Built locator: {rf_locator} from element: {element}")
             self._run_rf_keyword("Clear Text", rf_locator)
             self._run_rf_keyword("Input Text", rf_locator, text)
-            return
+            
+        elif function_name == "scroll_down":
+            logger.info("Scrolling down...")
+            self._run_rf_keyword("Swipe", "50", "80", "50", "20", "500")
+            
+        else:
+            raise AssertionError(f"Unknown tool call: {function_name}")
 
-        raise AssertionError(f"Unsupported action: {action}")
-
-    def _execute_visual_check(self, result: Dict[str, Any]) -> None:
-        verification_result = result.get("verification_result")
-        confidence_score = result.get("confidence_score")
-        analysis = result.get("analysis")
-        found_elements = result.get("found_elements", [])
-        issues = result.get("issues", [])
+    def _execute_visual_check_from_tool_calls(self, result: Dict[str, Any]) -> None:
+        """Execute visual check from tool calls returned by the LLM."""
+        tool_calls = result.get("tool_calls", [])
+        
+        if not tool_calls:
+            logger.error("No tool calls in visual check response")
+            raise AssertionError("AI did not return any tool calls for visual verification")
+        
+        # Extract the first tool call (should be verify_visual_match)
+        tool_call = tool_calls[0]
+        function_name = tool_call["function"]["name"]
+        arguments = tool_call["function"]["arguments"]
+        
+        if function_name != "verify_visual_match":
+            raise AssertionError(f"Unexpected tool call for visual check: {function_name}")
+        
+        logger.info(f"Visual verification results: {arguments}")
+        
+        # Extract arguments
+        verification_result = arguments.get("verification_result")
+        confidence_score = arguments.get("confidence_score")
+        analysis = arguments.get("analysis")
+        found_elements = arguments.get("found_elements", [])
+        issues = arguments.get("issues", [])
 
         # Log to Robot Framework with detailed AI response
         logger.debug("=" * 80)

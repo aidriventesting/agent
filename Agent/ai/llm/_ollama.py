@@ -46,6 +46,8 @@ class OllamaClient(BaseLLMClient):
         max_tokens: int = 1400,
         temperature: float = 1.0,
         top_p: float = 1.0,
+        tools: Optional[List[Dict]] = None,
+        tool_choice: Optional[Union[str, Dict]] = None,
         **kwargs
     ) -> Optional[ChatCompletion]:
         """
@@ -57,6 +59,8 @@ class OllamaClient(BaseLLMClient):
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature (0-2)
             top_p: Nucleus sampling parameter (0-1)
+            tools: List of tools to use
+            tool_choice: Tool choice
             **kwargs: Additional parameters to pass to the API
             
         Returns:
@@ -65,14 +69,21 @@ class OllamaClient(BaseLLMClient):
         try:
             self._validate_parameters(temperature, top_p)
             
-            response = self.client.chat.completions.create(
-                model=model or self.default_model,
-                messages=messages,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
+            params = {
+                "model": model or self.default_model,
+                "messages": messages,
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
                 **kwargs
-            )
+            }
+
+            if tools:
+                params["tools"] = tools
+            if tool_choice:
+                params["tool_choice"] = tool_choice
+
+            response = self.client.chat.completions.create(**params)
             
             # Log usage
             logger.debug(
@@ -126,8 +137,22 @@ class OllamaClient(BaseLLMClient):
             return {}
             
         result = {
-            "content": response.choices[0].message.content,
+            "content": response.choices[0].message.content or "",
         }
+
+        # Extract tool calls if present
+        if response.choices[0].message.tool_calls:
+            tool_calls = []
+            for tc in response.choices[0].message.tool_calls:
+                tool_calls.append({
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                })
+            result["tool_calls"] = tool_calls
         
         if include_tokens and response.usage:
             logger.debug(f"Tokens used: {response.usage}")

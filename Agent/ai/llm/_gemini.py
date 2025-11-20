@@ -36,6 +36,8 @@ class GeminiClient(BaseLLMClient):
         max_tokens: int = 1400,
         temperature: float = 1.0,
         top_p: float = 1.0,
+        tools: Optional[List[Dict]] = None,
+        tool_choice: Optional[Union[str, Dict]] = None,
         **kwargs
     ) -> Optional[GenerateContentResponse]:
         try:
@@ -55,10 +57,24 @@ class GeminiClient(BaseLLMClient):
                 **kwargs
             )
 
-            response = client.generate_content(
-                gemini_messages,
-                generation_config=generation_config,
-            )
+            request_params = {
+                "contents": gemini_messages,
+                "generation_config": generation_config,
+            }
+
+            if tools:
+                # Check format and convert if necessary
+                if len(tools) > 0 and isinstance(tools[0], dict) and "type" in tools[0] and tools[0]["type"] == "function":
+                    from Agent.ai.llm._converters import convert_to_gemini_tools
+                    request_params["tools"] = convert_to_gemini_tools(tools)
+                else:
+                    request_params["tools"] = tools
+            
+            if tool_choice:
+                from Agent.ai.llm._converters import convert_tool_choice_to_gemini_config
+                request_params["tool_config"] = convert_tool_choice_to_gemini_config(tool_choice)
+
+            response = client.generate_content(**request_params)
 
             if hasattr(response, "usage_metadata") and response.usage_metadata:
                 total_tokens = response.usage_metadata.prompt_token_count + response.usage_metadata.candidates_token_count
@@ -162,6 +178,10 @@ class GeminiClient(BaseLLMClient):
 
         finish_reason = response.candidates[0].finish_reason
         finish_reason_name = str(finish_reason)
+        
+        content_text = ""
+        tool_calls = []
+        
         try:
             content_text = response.text
         except Exception as e:
@@ -175,7 +195,31 @@ class GeminiClient(BaseLLMClient):
             else:
                 content_text = f"[No content available - finish_reason: {finish_reason_name}]"
 
+        # Extract function calls
+        if response.candidates and response.candidates[0].content.parts:
+            import json
+            for part in response.candidates[0].content.parts:
+                if hasattr(part, 'function_call') and part.function_call:
+                    fc = part.function_call
+                    # Convert arguments to dict (they are Struct/Map)
+                    args = {}
+                    for key, value in fc.args.items():
+                        args[key] = value
+                    
+                    tool_calls.append({
+                        "id": "call_" + fc.name,  # Gemini doesn't provide ID
+                        "type": "function",
+                        "function": {
+                            "name": fc.name,
+                            "arguments": json.dumps(args)
+                        }
+                    })
+
         result = {"content": content_text}
+        
+        if tool_calls:
+            result["tool_calls"] = tool_calls
+            
         if include_tokens and hasattr(response, "usage_metadata") and response.usage_metadata:
             prompt_tokens = response.usage_metadata.prompt_token_count
             completion_tokens = response.usage_metadata.candidates_token_count

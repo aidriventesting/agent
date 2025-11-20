@@ -44,6 +44,8 @@ class DeepSeekClient(BaseLLMClient):
         max_tokens: int = 1400,
         temperature: float = 1.0,
         top_p: float = 1.0,
+        tools: Optional[List[Dict]] = None,
+        tool_choice: Optional[Union[str, Dict]] = None,
         **kwargs
     ):
         """
@@ -55,6 +57,8 @@ class DeepSeekClient(BaseLLMClient):
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature (0-2.0 for DeepSeek)
             top_p: Nucleus sampling parameter (0-1)
+            tools: List of tools to use
+            tool_choice: Tool choice
             **kwargs: Additional parameters to pass to the API
             
         Returns:
@@ -95,6 +99,18 @@ class DeepSeekClient(BaseLLMClient):
             
             if system_message:
                 api_params["system"] = system_message
+
+            if tools:
+                # Check format and convert if necessary
+                if len(tools) > 0 and isinstance(tools[0], dict) and "type" in tools[0] and tools[0]["type"] == "function":
+                    from Agent.ai.llm._converters import convert_to_anthropic_tools
+                    api_params["tools"] = convert_to_anthropic_tools(tools)
+                else:
+                    api_params["tools"] = tools
+            
+            if tool_choice:
+                from Agent.ai.llm._converters import convert_tool_choice_to_anthropic
+                api_params["tool_choice"] = convert_tool_choice_to_anthropic(tool_choice)
             
             response = self.client.messages.create(**api_params)
             
@@ -231,15 +247,31 @@ class DeepSeekClient(BaseLLMClient):
             logger.error(f"Invalid response or no content in the response", True)
             return {}
         
-        # Extract text content (follows Anthropic's format)
+        # Extract text content and tool calls (follows Anthropic's format)
         content_text = ""
+        tool_calls = []
+        
         for block in response.content:
             if hasattr(block, 'text'):
                 content_text += block.text
+            elif hasattr(block, "type") and block.type == "tool_use":
+                # Anthropic/DeepSeek tool_use block
+                import json
+                tool_calls.append({
+                    "id": block.id,
+                    "type": "function",
+                    "function": {
+                        "name": block.name,
+                        "arguments": json.dumps(block.input)
+                    }
+                })
         
         result = {
             "content": content_text,
         }
+
+        if tool_calls:
+            result["tool_calls"] = tool_calls
         
         if include_tokens and response.usage:
             logger.debug(f"Tokens used: input={response.usage.input_tokens}, output={response.usage.output_tokens}")

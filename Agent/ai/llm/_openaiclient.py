@@ -33,18 +33,27 @@ class OpenAIClient(BaseLLMClient):
         model: Optional[str] = None,
         temperature: float = 1.0,
         top_p: float = 1.0,
+        tools: Optional[List[Dict]] = None,
+        tool_choice: Optional[Union[str, Dict]] = None,
         **kwargs
     ) -> Optional[ChatCompletion]:
         try:
             self._validate_parameters(temperature, top_p)
 
-            response = self.client.chat.completions.create(
-                model=model or self.default_model,
-                messages=messages,
-                temperature=temperature,
-                top_p=top_p,
+            params = {
+                "model": model or self.default_model,
+                "messages": messages,
+                "temperature": temperature,
+                "top_p": top_p,
                 **kwargs
-            )
+            }
+
+            if tools:
+                params["tools"] = tools
+            if tool_choice:
+                params["tool_choice"] = tool_choice
+
+            response = self.client.chat.completions.create(**params)
             logger.debug(f"OpenAI API call successful. Tokens used: {response.usage.total_tokens}", True)
             logger.debug(f"messages: {response}")
             return response
@@ -71,8 +80,22 @@ class OpenAIClient(BaseLLMClient):
             return {}
 
         result = {
-            "content": response.choices[0].message.content,
+            "content": response.choices[0].message.content or "",
         }
+
+        # Extract tool calls if present
+        if response.choices[0].message.tool_calls:
+            tool_calls = []
+            for tc in response.choices[0].message.tool_calls:
+                tool_calls.append({
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                })
+            result["tool_calls"] = tool_calls
 
         if include_tokens:
             logger.debug(f"Tokens used: {response.usage}")
